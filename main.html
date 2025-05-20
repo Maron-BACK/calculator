@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>은퇴 자금 계산기</title>
+  <style>
+    :root {
+      --primary: #4B7FB9;
+      --accent: #E27350;
+      --bg: #f8f9fa;
+      --white: #ffffff;
+      --gray: #dee2e6;
+      --text: #333;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      padding: 40px 20px;
+      margin: 0;
+      color: var(--text);
+    }
+    .container {
+      max-width: 720px;
+      margin: auto;
+      background: var(--white);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: 24px;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 16px;
+      display: block;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border: 1px solid var(--gray);
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    button {
+      margin-top: 24px;
+      padding: 12px 20px;
+      font-size: 16px;
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      width: 100%;
+    }
+    button:hover {
+      background: #3b6799;
+    }
+    .result {
+      margin-top: 32px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      background: var(--white);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th {
+      background-color: var(--primary);
+      color: var(--white);
+      font-weight: 600;
+    }
+    th, td {
+      border: 1px solid var(--gray);
+      padding: 10px;
+      text-align: right;
+      font-size: 14px;
+    }
+    th:first-child, td:first-child {
+      text-align: center;
+    }
+    @media (max-width: 600px) {
+      input, button {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>은퇴 자금 계산기</h2>
+  <label>초기 자금 (만원): <input type="number" id="initialCapital" /></label>
+  <label>월 납입금 (만원): <input type="number" id="monthlyContribution" /></label>
+  <label>연 수익률 (%): <input type="number" id="rateOfReturn" /></label>
+  <label>현재 생활비 (만원): <input type="number" id="monthlyExpense" /></label>
+  <label>물가상승률 (%): <input type="number" id="inflationRate" /></label>
+  <label>현재 나이: <input type="number" id="currentAge" /></label>
+  <label>은퇴 시점 나이: <input type="number" id="retirementAge" /></label>
+  <label>예상 수명: <input type="number" id="lifeExpectancy" /></label>
+  <button onclick="calculateRetirement()">계산하기</button>
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+  function calculateRetirement() {
+    const P = parseFloat(document.getElementById("initialCapital").value) * 10000;
+    const PMT = parseFloat(document.getElementById("monthlyContribution").value) * 10000;
+    const r = parseFloat(document.getElementById("rateOfReturn").value) / 100;
+    const e = parseFloat(document.getElementById("monthlyExpense").value) * 10000;
+    const i = parseFloat(document.getElementById("inflationRate").value) / 100;
+    const currentAge = parseInt(document.getElementById("currentAge").value);
+    const retirementAge = parseInt(document.getElementById("retirementAge").value);
+    const lifeExpectancy = parseInt(document.getElementById("lifeExpectancy").value);
+
+    const savingPeriod = retirementAge - currentAge;
+
+    let capital = P;
+    let rows = [];
+
+    for (let age = currentAge; age <= lifeExpectancy; age++) {
+      let asset = 0;
+      let expense = 0;
+
+      if (age < retirementAge) {
+        capital *= (1 + r);
+        capital += PMT * 12;
+        asset = Math.round(capital / 10000);
+        expense = 0;
+      } else {
+        const yearsAfterRetirement = age - retirementAge;
+        const adjustedExpense = e * Math.pow(1 + i, savingPeriod + yearsAfterRetirement);
+        capital *= (1 + r);
+        capital -= adjustedExpense * 12;
+        if (capital < 0) capital = 0;
+        asset = Math.round(capital / 10000);
+        expense = Math.round(adjustedExpense / 10000);
+      }
+
+      rows.push({ age, asset, expense });
+    }
+
+    const resultDiv = document.getElementById("result");
+
+    let table = '<table>';
+    table += '<tr><th>나이</th><th>자산 (만원)</th><th>월 생활비 (만원)</th></tr>';
+    rows.forEach(row => {
+      table += `<tr><td>${row.age}세</td><td>${row.asset.toLocaleString()}</td><td>${row.expense.toLocaleString()}</td></tr>`;
+    });
+    table += '</table>';
+
+    resultDiv.innerHTML = table;
+  }
+</script>
+</body>
+</html>
